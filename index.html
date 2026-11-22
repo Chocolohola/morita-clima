@@ -303,7 +303,8 @@ button{font:inherit;cursor:pointer}
 :root:not([data-theme=dark]) .top{--ms:#7FB0CC}:root:not([data-theme=dark]) .top[data-m=night]{--ms:#35589B}
 :root[data-theme=dark] .top{--ms:#4A8DB0}:root[data-theme=dark] .top[data-m=night]{--ms:#3B67B5}
 .top .mon .hsx.win rect{fill:#F4EBD3;opacity:.7}.top[data-m=night] .mon .hsx.win rect{fill:var(--mw);opacity:1}
-@media (max-width:820px){.top .mon{display:none}.top{min-height:0}}
+@media (max-width:820px){.top{min-height:0;padding-bottom:124px}.top .mon{right:auto;left:50%;transform:translateX(-50%);bottom:0;width:176px;height:132px}}
+
 .mon{position:absolute;right:26px;bottom:0;z-index:1;color:var(--mi);pointer-events:none}
 .mon .sil,.mon .mt{fill:var(--mi)}
 .mon .mt{opacity:.55}
