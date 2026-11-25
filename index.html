@@ -655,6 +655,19 @@ var $=function(id){return document.getElementById(id)};
 function pad(n){return (n<10?'0':'')+n}
 function addDays(s,n){var d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
 function dayLabel(s){var d=new Date(s+'T12:00:00Z');return WD[d.getUTCDay()]+' '+d.getUTCDate()}
+function CMP(more,same,less,nn,o){
+  var yl=function(a){var q=a.map(function(x){return x.y});return q.length>1?q.slice(0,-1).join(', ')+' y '+q[q.length-1]:q[0]};
+  var big,sub='',m=more.length,s=same.length;
+  var tail=function(){return o.P1+(m<=3?' solo en '+yl(more):' en '+m+' años')};
+  if(!nn){big='—'}
+  else if(less===nn){big=o.hi;sub='Ningún año anterior tuvo '+o.p2}
+  else if(m===nn){big=o.lo;sub='Los '+nn+' años anteriores tuvieron '+o.p2}
+  else if(s===nn){big='Igual que en los '+nn+' años anteriores'}
+  else if(s>=m&&s>=less){big='Igual que en '+s+' de los '+nn+' años anteriores';sub=m?tail():''}
+  else if(less===0){big=o.N1+' que en '+m+' de los '+nn+' años anteriores';sub=s&&s<=3?'Igual en '+yl(same):''}
+  else if(m===0){big=o.P1+' que en '+less+' de los '+nn+' años anteriores';sub='Ningún año anterior tuvo '+o.p2+(s&&s<=3?'; igual en '+yl(same):'')}
+  else{big=o.P1+' que en '+less+' de los '+nn+' años anteriores';sub=tail()+(s&&s<=3?'; igual en '+yl(same):'')}
+  return [big,sub]}
 function shortDate(s){var d=new Date(s+'T12:00:00Z');return d.getUTCDate()+' '+MS[d.getUTCMonth()]}
 function longDate(s){var d=new Date(s+'T12:00:00Z');return d.getUTCDate()+' de '+MF[d.getUTCMonth()]}
 function localToday(){var p=new Intl.DateTimeFormat('en-CA',{timeZone:tz(),year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());return p}
@@ -901,8 +914,8 @@ function renderAccum(ctrl,Y,md,wait){
   var hi=null,lo=null,hi10=null,lo10=null;pv.forEach(function(o){if(!hi10||o.v>hi10.v)hi10=o;if(!lo10||o.v<lo10.v)lo10=o});hi=hi10;lo=lo10;if(cur.v!==null){var cs={y:Y,v:cur.v};if(!hi||cur.v>hi.v)hi=cs;if(!lo||cur.v<lo.v)lo=cs}
   var more=cur.v===null?[]:pv.filter(function(o){return o.v>cur.v}),same=cur.v===null?[]:pv.filter(function(o){return o.v===cur.v}),less=cur.v===null?0:nn-more.length-same.length;
   var yl=function(a){var q=a.map(function(o){return o.y});return q.length>1?q.slice(0,-1).join(', ')+' y '+q[q.length-1]:q[0]};
-  var big3=cur.v===null?'—':'Más lluvia que en '+less+' de los últimos '+nn+' años';
-  var sub3=cur.v===null?'':(more.length===0?'Ningún año llevaba más lluvia a esta fecha'+(same.length?'; igual en '+yl(same):''):(more.length<=3?'Más lluvia solo en '+yl(more):'Más lluvia en '+more.length+' años')+(same.length&&same.length<=3?'; igual en '+yl(same):''));
+  var cmpr=cur.v===null?['—','']:CMP(more,same,less,nn,{P1:'Más lluvia',N1:'Menos lluvia',p2:'más lluvia',hi:'Hasta el '+dd+': el año más lluvioso de los '+nn+' anteriores',lo:'Hasta el '+dd+': el año más seco de los '+nn+' anteriores'});
+  var big3=cmpr[0],sub3=cmpr[1];
   var st=function(l,v,sub,dark,small){return '<div class="st'+(dark?' dark':'')+'"><span class="l">'+l+'</span><b'+(small?' style="font-size:24px;line-height:1.2"':'')+'>'+v+'</b>'+(sub?'<span class="s small">'+sub+'</span>':'')+'</div>'};
   var yv2=function(o){return o.y+' · '+f1(o.v)+' mm'+(o.y===Y?(Y===CYa?' (este año)':' (año elegido)'):'')},sb2=function(a,b){return a&&b?(a.y!==b.y?'Entre los '+nn+' anteriores: '+b.y+' · '+f1(b.v)+' mm':'Incluye '+(Y===CYa?'este año':'el '+Y)+' en la comparación'):''};
   var stats='<div class="row">'+st('Año más lluvioso al '+dd,hi?yv2(hi):'—',sb2(hi,hi10))+st('Año más seco al '+dd,lo?yv2(lo):'—',sb2(lo,lo10))+st((Y===CYa?'Este año':'En '+Y)+' vs los '+nn+' anteriores',big3,sub3,true,true)+'</div>';
@@ -968,8 +981,8 @@ function renderHist(){
   var more=ref===null?[]:years.filter(function(o){return o.v!==null&&o.v>ref}),same=ref===null?[]:years.filter(function(o){return o.v!==null&&o.v===ref}),less=ref===null?0:nn-more.length-same.length;
   var yl=function(a){var y=a.map(function(o){return o.y});return y.length>1?y.slice(0,-1).join(', ')+' y '+y[y.length-1]:y[0]};
   var P1=state.v==='sea'?'Mar más cálido':'Más '+N[2],P2=state.v==='sea'?'mar más cálido':'más '+N[2];
-  var big3=ref===null?'—':P1+' que en '+less+' de los últimos '+nn+' años';
-  var sub3=ref===null?'':(more.length===0?'Ningún año tuvo '+P2+(same.length?'; igual en '+yl(same):''):(more.length<=3?P1+' solo en '+yl(more):P1+' en '+more.length+' años')+(same.length&&same.length<=3?'; igual en '+yl(same):''));
+  var cmpr=ref===null?['—','']:CMP(more,same,less,nn,{P1:P1,N1:(state.v==='sea'?'Mar más frío':'Menos '+N[2]),p2:(state.v==='sea'?'el mar más cálido':P2),hi:(cyr?'El '+dd+(state.v==='sea'?' con el mar más ':' más ')+N[0].replace(' (mínima)','')+' de los últimos '+nn+' años':'El '+dd+' de '+Y+' fue el '+(state.v==='sea'?'de mar más ':'más ')+N[0].replace(' (mínima)','')+' de los '+nn+' años anteriores'),lo:(cyr?'El '+dd+(state.v==='sea'?' con el mar más ':' más ')+N[1].replace(' (mínima)','')+' de los últimos '+nn+' años':'El '+dd+' de '+Y+' fue el '+(state.v==='sea'?'de mar más ':'más ')+N[1].replace(' (mínima)','')+' de los '+nn+' años anteriores')});
+  var big3=cmpr[0],sub3=cmpr[1];
   var st=function(l,v,sub,dark,small){return '<div class="st'+(dark?' dark':'')+'"><span class="l">'+l+'</span><b'+(small?' style="font-size:24px;line-height:1.2"':'')+'>'+v+'</b>'+(sub?'<span class="s small">'+sub+'</span>':'')+'</div>'};
   var yv=function(o){return o.y+' · '+fmt(o.v,V.dec)+V.unit+(o.y===Y?(cyr?' (este año)':' (año elegido)'):'')},sb=function(a,b){return a&&b?(a.y!==b.y?'Entre los '+nn+' anteriores: '+b.y+' · '+fmt(b.v,V.dec)+V.unit:'Incluye '+(cyr?'este año':'el '+Y)+' en la comparación'):''};
   var stats='<div class="row">'+st(LAB[0],hi?yv(hi):'—',sb(hi,hi10))+st(LAB[1],lo?yv(lo):'—',sb(lo,lo10))+st(LAB[2],big3,sub3,true,true)+'</div>';
